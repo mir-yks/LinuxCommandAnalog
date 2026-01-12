@@ -30,3 +30,35 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+pwd
+exit
+ls
+cd
+mkdir
+rmdir
+cat
+file
+nl
+zip
+unzip
+tar
+touch
+free
+rm
+head
+date
+arch
+clear
+ps
+du
+df
+wc
+kill
+tail
+uname
+cp
+history
+pwgen
+hexdump
+find
