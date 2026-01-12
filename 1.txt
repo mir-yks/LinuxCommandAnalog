@@ -13,4 +13,4 @@
 Обязательно предусмотреть контроль ввода начальных/входных значений на корректность/правильность (например, выход за диапозон указанных чисел/значений) используя механизм обработки исключительных ситуаций! Если при сдаче проекта приложение/команда внезапно "упадет" или "зависнет", из общей оценки вычитается ровно 1 балл!
 
 Задание на оценку 5
-Команды ls -R -a -l -r -h, cd -, mkdir -p, rmdir, cat -n, file, nl, zip, unzip, tar -c -f -x, !!, !n, touch, free, rm -R -f, head -c -n, date, arch, clear, ps, du, df, wc, kill, tail -n, uname, cp, history, pwgen, hexdump, find
+Команды ls -R -a -l -r -h, cd -, mkdir -p, rmdir, cat -n, file, nl, zip, unzip, tar -c -f -x, !!, !n, touch, free, rm -R -f, head -c -n, date, arch, ps, du, df, wc, kill, tail -n, uname, cp, history, pwgen, hexdump, find
