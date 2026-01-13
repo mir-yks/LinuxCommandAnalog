@@ -64,7 +64,7 @@ func parseArgs() *Config {
 		case "-d":
 			i++
 			if i >= len(os.Args) {
-				panic("touch: опция требует операнд -- 'd'")
+				panic("date: опция требует операнд -- 'd'")
 			}
 			config.Date = os.Args[i]
 			i++
@@ -131,18 +131,16 @@ func printVersion() {
 // executeDate выполняет основную логику команды date
 func executeDate(config *Config) error {
 	if config.Date == "" && config.File == "" && len(config.Filenames) == 0 {
-		fmt.Println(time.Now().Format(time.RFC1123))
+		fmt.Println(time.Now().Format("02 Jan 2006 15:04:05 MST"))
 		return nil
 	}
 
-	// Обработка -d <дата>
 	if config.Date != "" {
 		if err := processDate(config.Date); err != nil {
 			return fmt.Errorf("ошибка обработки даты: %v", err)
 		}
 	}
 
-	// Обработка -f или -r <файл>
 	if config.File != "" {
 		if err := processFile(config.File, config); err != nil {
 			return fmt.Errorf("ошибка обработки файла: %v", err)
@@ -152,10 +150,10 @@ func executeDate(config *Config) error {
 	return nil
 }
 
-// processDate парсит и выводит дату
+// processDate парсит и выводит дату в формате Linux
 func processDate(dateInput string) error {
 	if parsedDate, err := time.Parse(time.RFC3339, dateInput); err == nil {
-		fmt.Println("Дата:", parsedDate.Format(time.RFC1123))
+		fmt.Println(parsedDate.Format("02 Jan 2006 15:04:05 MST"))
 		return nil
 	}
 	return fmt.Errorf("неверный формат даты '%s'. Используйте RFC3339 (пример: 2026-01-13T12:00:00Z)", dateInput)
@@ -169,23 +167,33 @@ func processFile(filePath string, config *Config) error {
 	}
 	defer file.Close()
 
-	if config.File != "" && os.Args[1] == "-r" {
+	if os.Args[1] == "-r" {
 		info, err := file.Stat()
 		if err != nil {
 			return fmt.Errorf("не удалось получить информацию о файле: %v", err)
 		}
-		fmt.Println("Время файла:", info.ModTime().Format(time.RFC1123))
-	} else {
-		scanner := bufio.NewScanner(file)
-		for scanner.Scan() {
-			if err := processDate(scanner.Text()); err != nil {
-				fmt.Fprintf(os.Stderr, "Ошибка в строке: %v\n", err)
-			}
+		fmt.Println(info.ModTime().Format("02 Jan 2006 15:04:05 MST"))
+		return nil
+	}
+
+	scanner := bufio.NewScanner(file)
+	validLines := 0
+	for scanner.Scan() {
+		line := scanner.Text()
+		if parsedDate, err := time.Parse(time.RFC3339, line); err == nil {
+			fmt.Println(parsedDate.Format("02 Jan 2006 15:04:05 MST"))
+			validLines++
 		}
-		if err := scanner.Err(); err != nil {
-			return fmt.Errorf("ошибка чтения файла: %v", err)
-		}
+	}
+	
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("ошибка чтения файла: %v", err)
+	}
+
+	if validLines == 0 {
+		return fmt.Errorf("в файле '%s' не найдено дат в формате RFC3339", filePath)
 	}
 
 	return nil
 }
+
