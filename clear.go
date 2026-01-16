@@ -6,18 +6,19 @@ import (
 	"os"
 )
 
-// Структура для хранения параметров команды
 type ClearOptions struct {
-	Help    bool   
-	Version bool   
-	Force   bool   
+	Help      bool
+	Version   bool
+	CursesVer bool
+	Force     bool
+	NoScroll  bool
 }
 
-// ANSI escape коды для управления терминалом
 const (
-	clearScreenCode = "\033[H\033[2J"  
-	clearLineCode   = "\033[2K"        
-	cursorHome      = "\033[H"         
+	clearScreenCode = "\033[H\033[2J"
+	clearLineCode   = "\033[2K"
+	cursorHome      = "\033[H"
+	clearScrollback = "\033[3J" 
 )
 
 func parseFlags() ClearOptions {
@@ -27,8 +28,10 @@ func parseFlags() ClearOptions {
 	flag.BoolVar(&options.Help, "help", false, "показать справку и выйти")
 	flag.BoolVar(&options.Version, "v", false, "показать версию и выйти")
 	flag.BoolVar(&options.Version, "version", false, "показать версию и выйти")
+	flag.BoolVar(&options.CursesVer, "V", false, "показать версию curses и выйти")
 	flag.BoolVar(&options.Force, "f", false, "принудительная очистка (игнорировать проверки)")
 	flag.BoolVar(&options.Force, "force", false, "принудительная очистка (игнорировать проверки)")
+	flag.BoolVar(&options.NoScroll, "x", false, "не очищать буфер прокрутки")
 	
 	flag.Parse()
 	
@@ -41,7 +44,6 @@ func parseFlags() ClearOptions {
 	return options
 }
 
-// Функция для отображения справки
 func showHelp() {
 	fmt.Println("Использование: clear [КЛЮЧ]...")
 	fmt.Println()
@@ -50,26 +52,29 @@ func showHelp() {
 	fmt.Println("Ключи:")
 	fmt.Println("  -h, --help     показать эту справку и выйти")
 	fmt.Println("  -v, --version  показать информацию о версии и выйти")
-	fmt.Println("  -f, --force    принудительная очистка (игнорировать проверки терминала)")
+	fmt.Println("  -V             показать версию curses и выйти")
+	fmt.Println("  -f, --force    принудительная очистка (игнорировать проверки)")
+	fmt.Println("  -x             не очищать буфер прокрутки")
 	fmt.Println()
 	fmt.Println("Примеры:")
 	fmt.Println("  clear          # Очистить экран")
 	fmt.Println("  clear -h       # Показать справку")
-	fmt.Println("  clear -v       # Показать версию")
-	fmt.Println("  clear -f       # Принудительная очистка")
+	fmt.Println("  clear -V       # Показать версию curses")
+	fmt.Println("  clear -x       # Очистить только экран, не scrollback")
 }
 
-// Функция для отображения версии
 func showVersion() {
 	fmt.Println("clear версия 1.0")
 	fmt.Println("Разработано в рамках учебного проекта")
 	fmt.Println("Язык программирования: Golang")
 }
 
-// Функция для проверки поддержки ANSI escape кодов
+func showCursesVersion() {
+	fmt.Println("ncurses 6.4.20230624") 
+}
+
 func isTerminalANSICapable() bool {
 	term := os.Getenv("TERM")
-	
 	ansiTerms := []string{
 		"xterm", "xterm-256color", "xterm-color",
 		"screen", "screen-256color",
@@ -87,20 +92,22 @@ func isTerminalANSICapable() bool {
 	return false
 }
 
-// Функция очистки экрана
 func clearScreen(options ClearOptions) error {
 	if !options.Force && !isTerminalANSICapable() {
-		fmt.Fprintln(os.Stderr, "clear: терминал может не поддерживать очистку экрана")
+		term := os.Getenv("TERM")
+		fmt.Fprintf(os.Stderr, "clear: терминал '%s' может не поддерживать очистку экрана\n", term)
 		fmt.Fprintln(os.Stderr, "Используйте 'clear -f' для принудительной очистки")
 		return fmt.Errorf("терминал не поддерживает ANSI escape коды")
 	}
 	
-	fmt.Print(clearScreenCode)
+	if !options.NoScroll {
+		fmt.Print(clearScrollback)
+	}
 	
+	fmt.Print(clearScreenCode)
 	fmt.Print(cursorHome)
 	
 	os.Stdout.Sync()
-	
 	return nil
 }
 
@@ -117,8 +124,14 @@ func main() {
 		os.Exit(0)
 	}
 	
+	if options.CursesVer {
+		showCursesVersion()
+		os.Exit(0)
+	}
+	
 	if err := clearScreen(options); err != nil {
 		fmt.Fprintf(os.Stderr, "clear: ошибка очистки экрана: %v\n", err)
 		os.Exit(1)
 	}
 }
+
